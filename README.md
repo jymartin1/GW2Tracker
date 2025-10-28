@@ -1,5 +1,7 @@
 # GW2 Legendary Tracker
 
+<img width="1267" height="1392" alt="image" src="https://github.com/user-attachments/assets/81fccd51-e912-4932-b645-c449cc062d1b" />
+
 A Python Flask web application that helps Guild Wars 2 players track their progress towards crafting legendary weapons.
 
 ## Features

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Loading {{ legendary_name }} Progress - GW2 Legendary Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Loading {{ legendary_name }} Progress</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-sword fa-3x text-primary"></i>
+                </div>
+                
+                <h4 class="mb-4">Scanning Your Account Data</h4>
+                
+                <div class="progress mb-3" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         role="progressbar" style="width: 0%">
+                        0%
+                    </div>
+                </div>
+                
+                <div id="status-message" class="mb-3">
+                    <p class="text-muted">Initializing...</p>
+                </div>
+                
+                <div id="detailed-status" class="small text-muted">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div id="bank-status" class="mb-2">
+                                <i class="fas fa-circle-notch fa-spin"></i> Bank: Pending
+                            </div>
+                            <div id="materials-status" class="mb-2">
+                                <i class="fas fa-circle text-secondary"></i> Materials: Pending
+                            </div>
+                            <div id="wallet-status" class="mb-2">
+                                <i class="fas fa-circle text-secondary"></i> Wallet: Pending
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="characters-status" class="mb-2">
+                                <i class="fas fa-circle text-secondary"></i> Characters: Pending
+                            </div>
+                            <div id="achievements-status" class="mb-2">
+                                <i class="fas fa-circle text-secondary"></i> Achievements: Pending
+                            </div>
+                            <div id="calculation-status" class="mb-2">
+                                <i class="fas fa-circle text-secondary"></i> Calculation: Pending
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <small class="text-muted">
+                        This may take 30-60 seconds depending on your account size...
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let progressInterval;
+let taskId = '{{ task_id }}';
+
+function updateProgress() {
+    fetch(`/progress/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update progress bar
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = data.progress + '%';
+            progressBar.textContent = Math.round(data.progress) + '%';
+            
+            // Update main status message
+            document.getElementById('status-message').innerHTML = `<p class="text-muted">${data.message}</p>`;
+            
+            // Update detailed status
+            updateDetailedStatus(data.step, data.substep);
+            
+            // Check if complete
+            if (data.complete) {
+                clearInterval(progressInterval);
+                if (data.success) {
+                    window.location.href = `/legendary/${encodeURIComponent('{{ legendary_name }}')}?task_id=${taskId}`;
+                } else {
+                    document.getElementById('status-message').innerHTML = 
+                        `<p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Error: ${data.error}</p>`;
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-danger');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching progress:', error);
+            document.getElementById('status-message').innerHTML = 
+                '<p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Connection error</p>';
+        });
+}
+
+function updateDetailedStatus(step, substep) {
+    // Reset all icons to secondary
+    document.querySelectorAll('#detailed-status i').forEach(icon => {
+        icon.className = 'fas fa-circle text-secondary';
+    });
+    
+    // Update current step
+    const statusMap = {
+        'bank': 'bank-status',
+        'materials': 'materials-status', 
+        'wallet': 'wallet-status',
+        'characters': 'characters-status',
+        'achievements': 'achievements-status',
+        'calculation': 'calculation-status'
+    };
+    
+    Object.keys(statusMap).forEach(key => {
+        const element = document.getElementById(statusMap[key]);
+        if (key === step) {
+            element.innerHTML = `<i class="fas fa-circle-notch fa-spin text-primary"></i> ${key.charAt(0).toUpperCase() + key.slice(1)}: ${substep || 'In Progress'}`;
+        } else if (isStepComplete(key, step)) {
+            element.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${key.charAt(0).toUpperCase() + key.slice(1)}: Complete`;
+        }
+    });
+}
+
+function isStepComplete(checkStep, currentStep) {
+    const stepOrder = ['bank', 'materials', 'wallet', 'characters', 'achievements', 'calculation'];
+    const checkIndex = stepOrder.indexOf(checkStep);
+    const currentIndex = stepOrder.indexOf(currentStep);
+    return checkIndex < currentIndex;
+}
+
+// Start polling for progress
+document.addEventListener('DOMContentLoaded', function() {
+    progressInterval = setInterval(updateProgress, 1000); // Update every second
+    updateProgress(); // Initial call
+});
+</script>
+{% endblock %}

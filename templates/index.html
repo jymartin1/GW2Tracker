@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not session.api_key %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-key"></i> Connect Your GW2 Account
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    To track your legendary weapon progress, you'll need to provide your Guild Wars 2 API key.
+                    This allows the tracker to scan your bank, inventories, and quest progression.
+                </p>
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> How to get your API key:</h6>
+                    <ol>
+                        <li>Go to <a href="https://account.arena.net/applications" target="_blank">account.arena.net/applications</a></li>
+                        <li>Click "New Key"</li>
+                        <li>Give it a name (e.g., "Legendary Tracker")</li>
+                        <li>Select these permissions: <strong>account</strong>, <strong>inventories</strong>, <strong>characters</strong>, <strong>unlocks</strong>, <strong>progression</strong></li>
+                        <li>Copy the generated key and paste it below</li>
+                    </ol>
+                </div>
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="api_key" class="form-label">GW2 API Key</label>
+                        <input type="text" class="form-control" id="api_key" name="api_key" 
+                               placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                               pattern="[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{20}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}"
+                               required>
+                        <div class="form-text">Your API key is stored securely and only used to fetch your game data.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-link"></i> Connect Account
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <h2>Welcome, {{ account.name }}!</h2>
+        <p class="lead">Select a legendary weapon to track your progress:</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for legendary_name in legendaries %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card legendary-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ legendary_name }}</h5>
+                <p class="card-text">Track your progress towards crafting {{ legendary_name }}.</p>
+                <a href="{{ url_for('legendary_progress', legendary_name=legendary_name) }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> View Progress
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
